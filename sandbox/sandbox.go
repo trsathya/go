@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/tour/pic"
+	"golang.org/x/tour/wc"
 	"math"
 	"math/cmplx"
 	"math/rand"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -58,7 +61,7 @@ func sqrt(x float64) string {
 	return fmt.Sprint(math.Sqrt(x))
 }
 
-func pow(x, n, lim float64) float64 {
+func pow1(x, n, lim float64) float64 {
 	if v := math.Pow(x, n); v < lim {
 		return v
 	} else {
@@ -66,6 +69,92 @@ func pow(x, n, lim float64) float64 {
 	}
 	// can't use v here, though
 	return lim
+}
+
+func DeferFunc() {
+	// defer
+	defer fmt.Println("world")
+	fmt.Println("hello")
+
+	// stacking defer
+	fmt.Println("counting")
+
+	for i := 0; i < 10; i++ {
+		defer fmt.Println(i)
+	}
+
+	fmt.Println("done")
+
+}
+
+type Vertex struct {
+	X int
+	Y int
+}
+
+var (
+	v3 = Vertex{1, 2}  // has type Vertex
+	v4 = Vertex{X: 1}  // Y:0 is implicit
+	v5 = Vertex{}      // X:0 and Y:0
+	p2 = &Vertex{1, 2} // has type *Vertex
+)
+
+// making slices
+func printSlice(s string, x []int) {
+	fmt.Printf("%s len=%d cap=%d %v\n",
+		s, len(x), cap(x), x)
+}
+
+// range
+var pow2 = []int{1, 2, 4, 8, 16, 32, 64, 128}
+
+//slicing exercise
+func Pic(dx, dy int) [][]uint8 {
+	outer := make([][]uint8, dy)
+	for i := range outer {
+		outer[i] = make([]uint8, dx)
+		for j := range outer[i] {
+			outer[i][j] = uint8(j) // also try (x+y)/2, x*y, and x^y. !Wow! :-)
+		}
+	}
+	return outer
+}
+
+//maps
+type LocationCoordinate struct {
+	Lat, Long float64
+}
+
+var map1 map[string]LocationCoordinate
+
+var map2 = map[string]LocationCoordinate{
+	"Bell Labs": LocationCoordinate{
+		40.68433, -74.39967,
+	},
+	"Google": LocationCoordinate{
+		37.42202, -122.08408,
+	},
+	"Apple": {37.42202, -122.08408},
+}
+
+//map exercise
+func WordCount(s string) map[string]int {
+	var map4 = make(map[string]int)
+
+	for i, v := range strings.Fields(s) {
+		if map4[v] != 0 {
+			continue
+		}
+		fmt.Println("Looping", i)
+		var count int = 0
+		for _, word := range strings.Fields(s) {
+			if word == v {
+				count++
+			}
+		}
+		map4[v] = count
+	}
+	return map4
 }
 
 func main() {
@@ -128,8 +217,8 @@ func main() {
 	var z6 int = int(f6)
 	fmt.Println(x6, y6, z6)
 
-	v := 1.3 // change me!
-	fmt.Printf("v is of type %T\n", v)
+	v2 := 1.3 // change me!
+	fmt.Printf("v is of type %T\n", v2)
 
 	const World = "世界"
 	fmt.Println("Hello", World)
@@ -164,8 +253,8 @@ func main() {
 	fmt.Println(sqrt(2), sqrt(-4))
 
 	fmt.Println(
-		pow(3, 2, 10),
-		pow(3, 3, 20),
+		pow1(3, 2, 10),
+		pow1(3, 3, 20),
 	)
 
 	//switch
@@ -204,17 +293,133 @@ func main() {
 		fmt.Println("Good evening.")
 	}
 
-	// defer
-	defer fmt.Println("world")
-	fmt.Println("hello")
+	DeferFunc()
+	// end of flow control statements
 
-	// stacking defer
-	fmt.Println("counting")
+	// pointers
 
-	for i := 0; i < 10; i++ {
-		defer fmt.Println(i)
+	i, j := 42, 2701
+	//var p *int      // declaring a pointer to an int.
+	p := &i         // point to i
+	fmt.Println(*p) // read i through the pointer. This is known as "dereferencing" or "indirecting".
+	*p = 21         // set i through the pointer. This is known as "dereferencing" or "indirecting".
+	fmt.Println(i)  // see the new value of i
+
+	p = &j         // point to j.
+	*p = *p / 37   // divide j through the pointer. This is known as "dereferencing" or "indirecting".
+	fmt.Println(j) // see the new value of j
+
+	// Structs
+	fmt.Println(Vertex{1, 2})
+
+	v1 := Vertex{1, 2}
+	v1.X = 4
+	fmt.Println(v1.X)
+	p1 := &v1
+	p1.X = 1e9
+	fmt.Println(v1)
+
+	fmt.Println(v3, p2, v4, v5)
+
+	//arrays
+	var array [2]string
+	array[0] = "Hello"
+	array[1] = "World"
+	fmt.Println(array[0], array[1])
+	fmt.Println(array)
+
+	s := []int{2, 3, 5, 7, 11, 13}
+	fmt.Println("s ==", s)
+
+	for i := 0; i < len(s); i++ {
+		fmt.Printf("s[%d] == %d\n", i, s[i])
 	}
 
-	fmt.Println("done")
+	// slicing
+	fmt.Println("s[1:4] ==", s[1:4])
+
+	// missing low index implies 0
+	fmt.Println("s[:3] ==", s[:3])
+
+	// missing high index implies len(s)
+	fmt.Println("s[4:] ==", s[4:])
+
+	a1 := make([]int, 5)
+	printSlice("a1", a1)
+	b1 := make([]int, 0, 5)
+	printSlice("b1", b1)
+	c1 := b1[:2]
+	printSlice("c1", c1)
+	d1 := c1[2:5]
+	printSlice("d1", d1)
+	//Nil slices
+	var zNil []int
+	fmt.Println(zNil, len(zNil), cap(zNil))
+	if zNil == nil {
+		fmt.Println("nil!")
+	}
+
+	var a2 []int
+	printSlice("a2", a2)
+
+	// append works on nil slices.
+	a2 = append(a2, 0)
+	printSlice("a2", a2)
+
+	// the slice grows as needed.
+	a2 = append(a2, 1)
+	printSlice("a2", a2)
+
+	// we can add more than one element at a time.
+	a2 = append(a2, 2, 3, 4)
+	printSlice("a2", a2)
+
+	// range
+	for i, v := range pow2 {
+		fmt.Printf("2**%d = %d\n", i, v)
+	}
+
+	pow3 := make([]int, 10)
+	for i := range pow3 {
+		pow3[i] = 1 << uint(i)
+	}
+	for _, value := range pow3 {
+		fmt.Printf("%d\n", value)
+	}
+
+	pic.Show(Pic)
+
+	// Maps
+	map1 = make(map[string]LocationCoordinate)
+	map1["Bell Labs"] = LocationCoordinate{
+		40.68433, -74.39967,
+	}
+	fmt.Println(map1["Bell Labs"])
+	fmt.Println(map1)
+
+	fmt.Println(map2)
+
+	//Mutating Maps
+	map3 := make(map[string]int)
+
+	map3["Answer"] = 42
+	fmt.Println("The value:", map3["Answer"])
+
+	v6, ok1 := map3["Answer"]
+	fmt.Println("The value:", v6, "Present?", ok1)
+
+	map3["Answer"] = 48
+	fmt.Println("The value:", map3["Answer"])
+
+	delete(map3, "Answer")
+	fmt.Println("The value:", map3["Answer"])
+
+	v6, ok2 := map3["Answer"]
+	fmt.Println("The value:", v6, "Present?", ok2)
+
+	// map exercise
+	wc.Test(WordCount)
+
+	//functions
 
 }
