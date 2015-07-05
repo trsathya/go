@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/cmplx"
 	"math/rand"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -166,6 +167,148 @@ func adder() func(int) int {
 	}
 }
 
+var (
+	previous, current int
+)
+
+func fibonacci() func() int {
+	return func() int {
+		sum := previous + current
+		if sum == 0 {
+			previous = 0
+			current = 1
+			return previous + current
+		} else {
+			previous = current
+			current = sum
+			return current
+		}
+
+	}
+}
+
+type FloatVertex struct {
+	X, Y float64
+}
+
+func (v *FloatVertex) Abs() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+}
+
+type MyFloat float64
+
+func (f MyFloat) Abs() float64 {
+	if f < 0 {
+		return float64(-f)
+	}
+	return float64(f)
+}
+
+func (v *FloatVertex) Scale(f float64) {
+	v.X = v.X * f
+	v.Y = v.Y * f
+}
+
+//interface
+type Abser interface {
+	Abs() float64
+}
+
+func runInterface() {
+	var abser Abser
+	f2 := MyFloat(-math.Sqrt2)
+	v9 := FloatVertex{3, 4}
+
+	abser = f2  // a MyFloat implements Abser
+	abser = &v9 // a *Vertex implements Abser
+
+	// In the following line, v is a Vertex (not *Vertex)
+	// and does NOT implement Abser.
+	// abser = v9
+
+	fmt.Println(abser.Abs())
+}
+
+// implicit interface
+type Reader interface {
+	Read(b []byte) (n int, err error)
+}
+
+type Writer interface {
+	Write(b []byte) (n int, err error)
+}
+
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func (p Person) String() string {
+	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
+}
+
+func runImplicitInterface() {
+	fmt.Println("Implicit interface")
+	var w Writer
+
+	// os.Stdout implements Writer
+	w = os.Stdout
+
+	fmt.Fprintf(w, "hello, writer\n")
+
+	person := Person{"Arthur Dent", 42}
+	anotherPerson := Person{"Zaphod Beeblebrox", 9001}
+	fmt.Println(person, anotherPerson)
+}
+
+//stringer
+
+type IPAddr [4]byte
+
+func (ip IPAddr) String() string {
+	return fmt.Sprintf("%v.%v.%v.%v", ip[0], ip[1], ip[2], ip[3])
+}
+
+func runStringer() {
+	fmt.Println("stringer---")
+	addrs := map[string]IPAddr{
+		"loopback":  {127, 0, 0, 1},
+		"googleDNS": {8, 8, 8, 8},
+	}
+	for n, a := range addrs {
+		fmt.Printf("%v: %v\n", n, a)
+	}
+}
+
+type MyError struct {
+	When time.Time
+	What string
+}
+
+func (e *MyError) Error() string {
+	return fmt.Sprintf("at %v, %s",
+		e.When, e.What)
+}
+
+func run() error {
+	return &MyError{
+		time.Now(),
+		"it didn't work",
+	}
+}
+
+func runErrors() {
+	fmt.Println("errors")
+	if err := run(); err != nil {
+		fmt.Println(err)
+	}
+}
+
 func main() {
 	fmt.Println("Welcome to the playground!")
 	fmt.Println("The time is", time.Now())
@@ -306,10 +449,10 @@ func main() {
 	// end of flow control statements
 
 	// pointers
-
+	fmt.Println("Pointers ---")
 	i, j := 42, 2701
-	//var p *int      // declaring a pointer to an int.
-	p := &i         // point to i
+	var p *int      // declaring a pointer to an int.
+	p = &i          // point to i
 	fmt.Println(*p) // read i through the pointer. This is known as "dereferencing" or "indirecting".
 	*p = 21         // set i through the pointer. This is known as "dereferencing" or "indirecting".
 	fmt.Println(i)  // see the new value of i
@@ -317,6 +460,7 @@ func main() {
 	p = &j         // point to j.
 	*p = *p / 37   // divide j through the pointer. This is known as "dereferencing" or "indirecting".
 	fmt.Println(j) // see the new value of j
+	fmt.Println("Pointers ---")
 
 	// Structs
 	fmt.Println(Vertex{1, 2})
@@ -443,4 +587,25 @@ func main() {
 			neg(-2*i),
 		)
 	}
+
+	fib := fibonacci()
+	for i := 0; i < 10; i++ {
+		fmt.Println(fib())
+	}
+
+	v7 := &FloatVertex{3, 4}
+	fmt.Println("FloatVertex", v7.Abs())
+
+	f1 := MyFloat(-math.Sqrt2)
+	fmt.Println(f1.Abs())
+
+	v8 := &FloatVertex{3, 4}
+	v8.Scale(5)
+	fmt.Println(v8, v8.Abs())
+
+	runInterface()
+
+	runImplicitInterface()
+	runStringer()
+	runErrors()
 }
