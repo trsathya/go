@@ -285,6 +285,7 @@ func runStringer() {
 	}
 }
 
+// errors
 type MyError struct {
 	When time.Time
 	What string
@@ -306,6 +307,109 @@ func runErrors() {
 	fmt.Println("errors")
 	if err := run(); err != nil {
 		fmt.Println(err)
+	}
+}
+
+// go routine
+func say(s string) {
+	for i := 0; i < 5; i++ {
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println(s)
+	}
+}
+
+func sum(a []int, c chan int) {
+	sum := 0
+	for _, v := range a {
+		sum += v
+	}
+	c <- sum // send sum to channel c
+}
+
+func runGoRoutine() {
+	a := []int{7, 2, 8, -9, 4, 0}
+
+	c := make(chan int)
+	go sum(a[:len(a)/2], c)
+	go sum(a[len(a)/2:], c)
+	x, y := <-c, <-c // receive from channel c and assign value to x and y
+
+	fmt.Println(x, y, x+y)
+}
+
+func runBufferedChannel() {
+	c := make(chan int, 2)
+	c <- 1
+	c <- 2
+	fmt.Println(<-c)
+	fmt.Println(<-c)
+}
+
+func fibonacci2(n int, c chan int) {
+	x, y := 0, 1
+	for i := 0; i < n; i++ {
+		c <- x
+		x, y = y, x+y
+	}
+	close(c)
+}
+
+func runRangeAndClose() {
+	fmt.Println("run fibonacci")
+	c := make(chan int, 10)
+	go fibonacci2(cap(c), c)
+	for i := range c {
+		fmt.Println(i)
+	}
+}
+
+var (
+	startTime time.Time
+)
+
+func fibonacci3(c, quit chan int) {
+	x, y := 0, 1
+	for {
+
+		select {
+		case c <- x:
+			fmt.Println("Before write", time.Since(startTime))
+			fmt.Println("Send on chan", time.Since(startTime))
+			x, y = y, x+y
+		case <-quit:
+			fmt.Println("quit")
+			return
+		}
+	}
+}
+
+func runFibonacci3() {
+	c := make(chan int)
+	quit := make(chan int)
+	go func() {
+		for i := 0; i < 10; i++ {
+			fmt.Println("receivedChan", <-c, time.Since(startTime))
+		}
+		quit <- 0
+	}()
+	startTime = time.Now()
+	fibonacci3(c, quit)
+}
+
+func runDefaultSelection() {
+	tick := time.Tick(100 * time.Millisecond)
+	boom := time.After(500 * time.Millisecond)
+	for {
+		select {
+		case <-tick:
+			fmt.Println("tick.")
+		case <-boom:
+			fmt.Println("BOOM!")
+			return
+		default:
+			fmt.Println("    .")
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
 }
 
@@ -604,8 +708,15 @@ func main() {
 	fmt.Println(v8, v8.Abs())
 
 	runInterface()
-
 	runImplicitInterface()
 	runStringer()
 	runErrors()
+
+	go say("world")
+	say("hello")
+	runGoRoutine()
+	runBufferedChannel()
+	runRangeAndClose()
+	runFibonacci3()
+	runDefaultSelection()
 }
